@@ -1,23 +1,21 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+// Compatible with OpenZeppelin Contracts ^5.0.0
+pragma solidity ^0.8.22;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {ERC20Burnable} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract MyToken is ERC20, Ownable {
-    constructor(
-        string memory name,
-        string memory symbol,
-        uint256 initialSupply
-    ) ERC20(name, symbol) Ownable(msg.sender) {  // Pass Ownable() to set msg.sender as the initial owner
-        _mint(msg.sender, initialSupply * 10 ** decimals());
+contract MyToken is ERC20, ERC20Burnable, Ownable {
+    constructor(address initialOwner)
+        ERC20("MyToken", "MTK")
+        Ownable(msg.sender) // Call Ownable constructor without parameters as it's done in the contract
+    {
+        transferOwnership(initialOwner); // Set the initial owner
+        _mint(initialOwner, 10 * 10 ** decimals()); // Mint initial supply to initialOwner
     }
 
     function mint(address to, uint256 amount) public onlyOwner {
         _mint(to, amount);
-    }
-
-    function burn(uint256 amount) public {
-        _burn(msg.sender, amount);
     }
 }

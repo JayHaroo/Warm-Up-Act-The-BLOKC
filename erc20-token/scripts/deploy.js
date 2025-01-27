@@ -1,18 +1,29 @@
+const { ethers } = require("hardhat");
+
 async function main() {
-  const [deployer] = await ethers.getSigners();
-
-  console.log("Deploying contract with the account:", deployer.address);
-
+  // Retrieve the contract factory
   const MyToken = await ethers.getContractFactory("MyToken");
-  // Deploy the contract, passing the name, symbol, and initial supply
-  const token = await MyToken.deploy("MyToken", "MTK", 1000000);  // Name, Symbol, Initial Supply
 
-  await token.deployed();
+  console.log("Deploying MyToken...");
 
-  console.log("Contract deployed to address:", token.address); // Use `.address` instead of `.target` for ethers.js v6+
+  // Specify the initial owner's address (e.g., the first signer)
+  const [deployer] = await ethers.getSigners();
+  const initialOwner = deployer.address;
+
+  // Deploy the contract with the required constructor argument
+  const myToken = await MyToken.deploy(initialOwner);
+
+  // Wait for the deployment to complete
+  await myToken.getAddress();
+
+  console.log(`MyToken deployed to: ${myToken.target}`);
+  console.log(`Initial owner: ${initialOwner}`);
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+// Main execution
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });

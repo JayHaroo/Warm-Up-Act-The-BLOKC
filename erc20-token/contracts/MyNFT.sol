@@ -1,38 +1,43 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+// Compatible with OpenZeppelin Contracts ^5.0.0
+pragma solidity ^0.8.22;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import {ERC721Burnable} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
+import {ERC721URIStorage} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract MyNFT is ERC721, Ownable {
-    uint256 private _tokenIdCounter;
+contract MyNFT is ERC721, ERC721URIStorage, ERC721Burnable, Ownable {
+    constructor(address initialOwner)
+        ERC721("MyNFT", "MNFT")
+        Ownable(initialOwner)
+    {}
 
-    // Base URI for metadata (change to your own base URI)
-    string private _baseURIextended;
-
-    constructor(string memory name, string memory symbol) ERC721(name, symbol) Ownable(msg.sender) {
-        _tokenIdCounter = 0; // Start the counter from 0
+    function safeMint(address to, uint256 tokenId, string memory uri)
+        public
+        onlyOwner
+    {
+        _safeMint(to, tokenId);
+        _setTokenURI(tokenId, uri);
     }
 
-    // Override the _baseURI function to return the custom base URI for token metadata
-    function _baseURI() internal view virtual override returns (string memory) {
-        return _baseURIextended;
+    // The following functions are overrides required by Solidity.
+
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override(ERC721, ERC721URIStorage)
+        returns (string memory)
+    {
+        return super.tokenURI(tokenId);
     }
 
-    // Set the base URI for the metadata (e.g., IPFS or custom server)
-    function setBaseURI(string memory baseURI_) public onlyOwner {
-        _baseURIextended = baseURI_;
-    }
-
-    // Mint a new NFT to the given address
-    function mint(address to) public onlyOwner {
-        uint256 tokenId = _tokenIdCounter;
-        _mint(to, tokenId);
-        _tokenIdCounter++; // Increment the counter after minting
-    }
-
-    // Function to view the current token ID counter
-    function currentTokenId() public view returns (uint256) {
-        return _tokenIdCounter;
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(ERC721, ERC721URIStorage)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
     }
 }

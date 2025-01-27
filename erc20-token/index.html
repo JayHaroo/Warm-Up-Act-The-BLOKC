@@ -1,105 +1,244 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mint NFT with ERC20 Token</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.6.1/ethers.min.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin: 0;
-      padding: 0;
-      background-color: #f4f4f9;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFT Minting dApp</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
 
-    .container {
-      margin-top: 50px;
-    }
+    <!-- Inline CSS -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7fc;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
 
-    input, button {
-      padding: 10px;
-      margin: 10px;
-      font-size: 16px;
-    }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
 
-    button {
-      cursor: pointer;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-    }
+        label {
+            font-size: 14px;
+            color: #444;
+            margin-bottom: 8px;
+            display: block;
+        }
 
-    button:hover {
-      background-color: #0056b3;
-    }
-  </style>
+        input {
+            width: 300px;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+
+        button {
+            width: 320px;
+            padding: 12px;
+            background-color: #2d9cdb;
+            border: none;
+            color: white;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #2196f3;
+        }
+
+        p#status {
+            font-size: 14px;
+            color: #555;
+            margin-top: 20px;
+        }
+
+        p#status.success {
+            color: #4caf50;
+        }
+
+        p#status.error {
+            color: #f44336;
+        }
+
+        /* Center content container */
+        .container {
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Mint Your NFT</h1>
-    <input id="nftAddress" type="text" placeholder="NFT Contract Address" />
-    <input id="erc20Address" type="text" placeholder="ERC20 Token Contract Address" />
-    <input id="recipient" type="text" placeholder="Recipient Address" />
-    <input id="amount" type="number" placeholder="Amount of ERC20 Tokens" />
-    <button onclick="mintNFT()">Mint NFT</button>
-    <p id="status"></p>
-  </div>
+    <div class="container">
+        <h1>Mint Your NFT</h1>
 
-  <script>
-    async function mintNFT() {
-      const nftAddress = document.getElementById('nftAddress').value;
-      const erc20Address = document.getElementById('erc20Address').value;
-      const recipient = document.getElementById('recipient').value;
-      const amount = document.getElementById('amount').value;
-      const status = document.getElementById('status');
+        <!-- User Input Fields -->
+        <label for="tokenAmount">Amount to Pay (in ERC20 tokens):</label>
+        <input type="text" id="tokenAmount" placeholder="Enter amount to pay" /><br>
 
-      if (!window.ethereum) {
-        status.textContent = 'MetaMask is not installed!';
-        return;
-      }
+        <label for="mintToAddress">Mint To Address (your address):</label>
+        <input type="text" id="mintToAddress" placeholder="Enter address" /><br>
 
-      try {
-        // Request account access
-        await ethereum.request({ method: 'eth_requestAccounts' });
+        <button id="mintBtn">Mint NFT</button>
+        <p id="status"></p>
+    </div>
 
-        const provider = new ethers.BrowserProvider(window.ethereum); // Updated for ethers.js v6
-        const signer = await provider.getSigner();
+    <script>
+        // Set up Web3 instance
+        const web3 = new Web3(window.ethereum);
+        let accounts;
 
-        // ABI for the NFT contract
-        const nftAbi = [
-          "function mint(address to) public",
+        // Define contract addresses and ABIs
+        const nftContractAddress = '0xc3e53F4d16Ae77Db1c982e75a937B9f60FE63690'; // Replace with your NFT contract address
+        const erc20ContractAddress = '0x84eA74d481Ee0A5332c457a4d796187F6Ba67fEB'; // Replace with your ERC20 token address
+
+        // Define contract ABI (simplified)
+        const nftContractABI = [
+            {
+                "constant": false,
+                "inputs": [
+                    {
+                        "name": "to",
+                        "type": "address"
+                    }
+                ],
+                "name": "mint",
+                "outputs": [],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "function"
+            }
         ];
 
-        // ABI for the ERC20 contract
-        const erc20Abi = [
-          "function transferFrom(address sender, address recipient, uint256 amount) public returns (bool)"
+        const erc20ContractABI = [
+            {
+                "constant": true,
+                "inputs": [
+                    {
+                        "name": "account",
+                        "type": "address"
+                    }
+                ],
+                "name": "balanceOf",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [
+                    {
+                        "name": "spender",
+                        "type": "address"
+                    },
+                    {
+                        "name": "amount",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "approve",
+                "outputs": [],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [
+                    {
+                        "name": "from",
+                        "type": "address"
+                    },
+                    {
+                        "name": "to",
+                        "type": "address"
+                    },
+                    {
+                        "name": "value",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "transferFrom",
+                "outputs": [],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "function"
+            }
         ];
 
-        // Connect to the ERC20 contract
-        const erc20Contract = new ethers.Contract(erc20Address, erc20Abi, signer);
-        
-        // Connect to the NFT contract
-        const nftContract = new ethers.Contract(nftAddress, nftAbi, signer);
+        // Initialize contracts
+        const nftContract = new web3.eth.Contract(nftContractABI, nftContractAddress);
+        const erc20Contract = new web3.eth.Contract(erc20ContractABI, erc20ContractAddress);
 
-        status.textContent = 'Minting in progress...';
+        // Request accounts from the user's wallet
+        window.ethereum.request({ method: 'eth_requestAccounts' })
+            .then((result) => {
+                accounts = result;
+                console.log('Connected account:', accounts[0]);
+            })
+            .catch((err) => console.error('Error connecting to wallet:', err));
 
-        // First, transfer ERC20 tokens for payment
-        const tx1 = await erc20Contract.transferFrom(signer.address, nftAddress, ethers.utils.parseUnits(amount, 18)); // Assumes 18 decimals for ERC20 token
-        await tx1.wait();
+        // Function to mint NFT by paying with ERC20
+        async function mintNFT() {
+            const account = accounts[0];
+            const tokenAmount = document.getElementById('tokenAmount').value;
+            const mintToAddress = document.getElementById('mintToAddress').value;
 
-        // Then, mint the NFT
-        const tx2 = await nftContract.mint(recipient);
-        await tx2.wait();
+            if (!tokenAmount || !mintToAddress) {
+                document.getElementById('status').innerText = 'Please enter valid values for amount and address.';
+                document.getElementById('status').className = 'error';
+                return;
+            }
 
-        status.textContent = `NFT minted successfully! Transaction Hash: ${tx2.hash}`;
-      } catch (error) {
-        console.error(error);
-        status.textContent = `Error: ${error.message}`;
-      }
-    }
-  </script>
+            const amountToPay = web3.utils.toWei(tokenAmount, 'ether'); // Convert token amount to proper units
+
+            try {
+                // Check if the user has enough ERC20 tokens
+                const balance = await erc20Contract.methods.balanceOf(account).call();
+                if (parseInt(balance) < parseInt(amountToPay)) {
+                    document.getElementById('status').innerText = 'Insufficient funds to mint NFT';
+                    document.getElementById('status').className = 'error';
+                    return;
+                }
+
+                // Approve ERC20 transfer
+                await erc20Contract.methods.approve(nftContractAddress, amountToPay).send({ from: account });
+
+                // Mint the NFT
+                const mintTx = await nftContract.methods.mint(mintToAddress).send({ from: account });
+                document.getElementById('status').innerText = `NFT minted successfully! Transaction Hash: ${mintTx.transactionHash}`;
+                document.getElementById('status').className = 'success';
+            } catch (error) {
+                console.error('Error minting NFT:', error);
+                document.getElementById('status').innerText = 'Error minting NFT';
+                document.getElementById('status').className = 'error';
+            }
+        }
+
+        // Attach mintNFT function to button
+        document.getElementById('mintBtn').addEventListener('click', mintNFT);
+    </script>
 </body>
 </html>
