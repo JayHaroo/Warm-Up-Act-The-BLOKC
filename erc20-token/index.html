@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mint NFT</title>
+  <title>Mint NFT with ERC20 Token</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.6.1/ethers.min.js"></script>
   <style>
     body {
@@ -41,7 +41,9 @@
   <div class="container">
     <h1>Mint Your NFT</h1>
     <input id="nftAddress" type="text" placeholder="NFT Contract Address" />
+    <input id="erc20Address" type="text" placeholder="ERC20 Token Contract Address" />
     <input id="recipient" type="text" placeholder="Recipient Address" />
+    <input id="amount" type="number" placeholder="Amount of ERC20 Tokens" />
     <button onclick="mintNFT()">Mint NFT</button>
     <p id="status"></p>
   </div>
@@ -49,7 +51,9 @@
   <script>
     async function mintNFT() {
       const nftAddress = document.getElementById('nftAddress').value;
+      const erc20Address = document.getElementById('erc20Address').value;
       const recipient = document.getElementById('recipient').value;
+      const amount = document.getElementById('amount').value;
       const status = document.getElementById('status');
 
       if (!window.ethereum) {
@@ -65,19 +69,32 @@
         const signer = await provider.getSigner();
 
         // ABI for the NFT contract
-        const abi = [
-          "function mint(address to) public", // Adjust this if your mint function differs
+        const nftAbi = [
+          "function mint(address to) public",
         ];
 
-        const contract = new ethers.Contract(nftAddress, abi, signer);
+        // ABI for the ERC20 contract
+        const erc20Abi = [
+          "function transferFrom(address sender, address recipient, uint256 amount) public returns (bool)"
+        ];
+
+        // Connect to the ERC20 contract
+        const erc20Contract = new ethers.Contract(erc20Address, erc20Abi, signer);
+        
+        // Connect to the NFT contract
+        const nftContract = new ethers.Contract(nftAddress, nftAbi, signer);
 
         status.textContent = 'Minting in progress...';
 
-        // Call the mint function
-        const tx = await contract.mint(recipient);
-        await tx.wait();
+        // First, transfer ERC20 tokens for payment
+        const tx1 = await erc20Contract.transferFrom(signer.address, nftAddress, ethers.utils.parseUnits(amount, 18)); // Assumes 18 decimals for ERC20 token
+        await tx1.wait();
 
-        status.textContent = `NFT minted successfully! Transaction Hash: ${tx.hash}`;
+        // Then, mint the NFT
+        const tx2 = await nftContract.mint(recipient);
+        await tx2.wait();
+
+        status.textContent = `NFT minted successfully! Transaction Hash: ${tx2.hash}`;
       } catch (error) {
         console.error(error);
         status.textContent = `Error: ${error.message}`;

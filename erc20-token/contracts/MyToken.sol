@@ -9,10 +9,9 @@ contract MyToken is ERC20, Ownable {
         string memory name,
         string memory symbol,
         uint256 initialSupply
-    ) ERC20(name, symbol) Ownable(msg.sender) {
+    ) ERC20(name, symbol) Ownable(msg.sender) {  // Pass Ownable() to set msg.sender as the initial owner
         _mint(msg.sender, initialSupply * 10 ** decimals());
     }
-
 
     function mint(address to, uint256 amount) public onlyOwner {
         _mint(to, amount);
