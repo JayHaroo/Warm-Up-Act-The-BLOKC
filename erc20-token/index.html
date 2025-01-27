@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mint NFT</title>
-  <script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.6.1/ethers.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -40,9 +40,8 @@
 <body>
   <div class="container">
     <h1>Mint Your NFT</h1>
-    <input id="nftAddress" type="text" placeholder="Contract Address" />
+    <input id="nftAddress" type="text" placeholder="NFT Contract Address" />
     <input id="recipient" type="text" placeholder="Recipient Address" />
-    <input id="tokenId" type="number" placeholder="Token ID" />
     <button onclick="mintNFT()">Mint NFT</button>
     <p id="status"></p>
   </div>
@@ -51,7 +50,6 @@
     async function mintNFT() {
       const nftAddress = document.getElementById('nftAddress').value;
       const recipient = document.getElementById('recipient').value;
-      const tokenId = document.getElementById('tokenId').value;
       const status = document.getElementById('status');
 
       if (!window.ethereum) {
@@ -63,18 +61,20 @@
         // Request account access
         await ethereum.request({ method: 'eth_requestAccounts' });
 
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        const signer = provider.getSigner();
+        const provider = new ethers.BrowserProvider(window.ethereum); // Updated for ethers.js v6
+        const signer = await provider.getSigner();
 
+        // ABI for the NFT contract
         const abi = [
-          "function mint(address to, uint256 tokenId) public"
+          "function mint(address to) public", // Adjust this if your mint function differs
         ];
 
         const contract = new ethers.Contract(nftAddress, abi, signer);
 
         status.textContent = 'Minting in progress...';
 
-        const tx = await contract.mint(recipient, tokenId);
+        // Call the mint function
+        const tx = await contract.mint(recipient);
         await tx.wait();
 
         status.textContent = `NFT minted successfully! Transaction Hash: ${tx.hash}`;
