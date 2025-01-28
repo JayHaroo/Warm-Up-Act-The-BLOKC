@@ -18,10 +18,17 @@ contract MyNFT is ERC721, Ownable {
   }
 
   function mint() external {
-    require(_tokenIds < maxSupply, "Max supply reached");
-    require(paymentToken.allowance(msg.sender, address(this)) >= mintPrice, "Insufficient");
-
-    paymentToken.transferFrom(msg.sender, address(this), mintPrice);
+    require(_tokenIds < maxSupply, "Supply Maxed Out");
+    
+    // Check the balance of the sender
+    require(paymentToken.balanceOf(msg.sender) >= mintPrice, "Insufficient token balance");
+    
+    // Check the allowance set by the sender
+    require(paymentToken.allowance(msg.sender, address(this)) >= mintPrice, "Allowance not set or insufficient");
+    
+    // Transfer tokens from the sender to the contract
+    bool success = paymentToken.transferFrom(msg.sender, address(this), mintPrice);
+    require(success, "Token transfer failed");
 
     _tokenIds++;
     uint newTokenId = _tokenIds;

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFT Minting dApp</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7fc;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        button {
+            width: 320px;
+            padding: 12px;
+            background-color: #2d9cdb;
+            border: none;
+            color: white;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #2196f3;
+        }
+
+        p#status {
+            font-size: 14px;
+            color: #555;
+            margin-top: 20px;
+        }
+
+        p#status.success {
+            color: #4caf50;
+        }
+
+        p#status.error {
+            color: #f44336;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Mint Your NFT</h1>
+        <button id="mintBtn">Mint NFT</button>
+        <p id="status"></p>
+    </div>
+
+    <script>
+        // Check if MetaMask is available
+        if (typeof window.ethereum === 'undefined') {
+            alert("Please install MetaMask to use this dApp.");
+        } else {
+            const web3 = new Web3(window.ethereum);
+            const nftContractAddress = '0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9';
+
+            let nftABI = null;
+            let accounts = [];
+
+            // Load ABIs dynamically
+            async function loadABIs() {
+                nftABI = await fetch('./tokens/artifacts/contracts/MyNFT.sol/MyNFT.json')
+                    .then(response => response.json())
+                    .then(data => data.abi)
+                    .catch(error => {
+                        console.error("Failed to load ABI:", error);
+                        document.getElementById('status').textContent = "Failed to load contract ABI.";
+                        document.getElementById('status').classList.add("error");
+                    });
+            }
+
+            // Request account access
+            async function loadWeb3() {
+                try {
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    accounts = await web3.eth.getAccounts();
+                    console.log("Connected Account:", accounts[0]);
+                } catch (error) {
+                    console.error("MetaMask connection error:", error);
+                    document.getElementById('status').textContent = "MetaMask connection failed.";
+                    document.getElementById('status').classList.add("error");
+                }
+            }
+
+            // Mint NFT function
+            async function mintNFT() {
+                if (!accounts || accounts.length === 0) {
+                    alert("Please connect your MetaMask wallet.");
+                    return;
+                }
+
+                if (!nftABI) {
+                    alert("Contract ABI not loaded. Please try again.");
+                    return;
+                }
+
+                const contract = new web3.eth.Contract(nftABI, nftContractAddress);
+                try {
+                    document.getElementById('status').textContent = "Minting in progress...";
+                    document.getElementById('status').classList.remove("success", "error");
+
+                    const mintTx = await contract.methods.mint(accounts[0]).send({ from: accounts[0] });
+
+                    document.getElementById('status').textContent = "Minting successful!";
+                    document.getElementById('status').classList.add("success");
+                    console.log('Minting transaction:', mintTx);
+                } catch (error) {
+                    document.getElementById('status').textContent = "Minting failed!";
+                    document.getElementById('status').classList.add("error");
+                    console.error("Minting error:", error);
+                }
+            }
+
+            // Event listener for mint button
+            document.getElementById('mintBtn').addEventListener('click', async () => {
+                await loadWeb3();
+                await loadABIs();
+                await mintNFT();
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,29 +1,29 @@
-const { ethers } = require("hardhat");
+// deploy.js
+const hre = require("hardhat");
+const ethers = hre.ethers; // Explicit import
 
 async function main() {
-  // Retrieve the contract factory
-  const MyNFT = await ethers.getContractFactory("MyNFT");
+  const [deployer] = await hre.ethers.getSigners();
 
-  console.log("Deploying MyNFT...");
+  console.log("Deploying contracts with the account:", deployer.address);
 
-  // Specify the initial owner's address (e.g., the first signer)
-  const [deployer] = await ethers.getSigners();
-  const initialOwner = deployer.address;
+  // Compile and deploy the MyNFT contract
+  const MyNFT = await hre.ethers.getContractFactory("MyNFT");
 
-  // Deploy the contract with the required constructor argument
-  const myNFT = await MyNFT.deploy(initialOwner);
+  const name = "MyNFT";
+  const symbol = "MNFT";
+  const paymentTokenAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+  const mintPrice = ethers.utils.parseUnits("100", 18); // Mint price is 100 tokens
+  const maxSupply = 1000; 
 
-  // Wait for the deployment to complete
-  await myNFT.getAddress();
+  const myNFT = await MyNFT.deploy(name, symbol, paymentTokenAddress, mintPrice, maxSupply);
 
-  console.log(`MyNFT deployed to: ${myNFT.target}`);
-  console.log(`Initial owner: ${initialOwner}`);
+  await myNFT.deployed();
+
+  console.log("MyNFT deployed to:", myNFT.target); 
 }
 
-// Main execution
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

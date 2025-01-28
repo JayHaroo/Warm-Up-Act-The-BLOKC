@@ -12,7 +12,7 @@ contract MyToken is ERC20, ERC20Burnable, Ownable {
         Ownable(msg.sender) // Call Ownable constructor without parameters as it's done in the contract
     {
         transferOwnership(initialOwner); // Set the initial owner
-        _mint(initialOwner, 10 * 10 ** decimals()); // Mint initial supply to initialOwner
+        _mint(initialOwner, 10000 * 10 ** decimals()); // Mint initial supply to initialOwner
     }
 
     function mint(address to, uint256 amount) public onlyOwner {
