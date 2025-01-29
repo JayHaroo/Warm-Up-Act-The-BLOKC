@@ -3,7 +3,7 @@ if (typeof window.ethereum === 'undefined') {
     alert("Please install MetaMask to use this dApp.");
 } else {
     const web3 = new Web3(window.ethereum);
-    const nftContractAddress = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+    const nftContractAddress = '0x333DF3F12512650d850c46f44870955d5F5C3925';
 
     let nftABI = null;
     let accounts = [];
