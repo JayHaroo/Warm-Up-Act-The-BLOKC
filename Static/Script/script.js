@@ -83,6 +83,29 @@ if (typeof window.ethereum === 'undefined') {
         return await nftContract.methods.mintPrice().call();
     }
 
+    // Check if the user has approved enough ERC20 tokens for minting
+    async function checkApproval() {
+        if (!accounts || accounts.length === 0) {
+            alert("Please connect your MetaMask wallet.");
+            return false;
+        }
+
+        if (!erc20ABI || !nftABI) {
+            alert("Contract ABIs not loaded. Please try again.");
+            return false;
+        }
+
+        const erc20Contract = new web3.eth.Contract(erc20ABI, erc20TokenAddress);
+        const mintPrice = await getMintPrice();
+
+        // Check the allowance for the NFT contract
+        const allowance = await erc20Contract.methods
+            .allowance(accounts[0], nftContractAddress)
+            .call();
+
+        return allowance >= mintPrice;
+    }
+
     // Mint NFT function
     async function mintNFT() {
         if (!accounts || accounts.length === 0) {
@@ -92,6 +115,13 @@ if (typeof window.ethereum === 'undefined') {
 
         if (!nftABI) {
             alert("NFT ABI not loaded. Please try again.");
+            return;
+        }
+
+        // Check if the user has approved enough tokens
+        const isApproved = await checkApproval();
+        if (!isApproved) {
+            alert("Please approve ERC20 tokens before minting.");
             return;
         }
 
