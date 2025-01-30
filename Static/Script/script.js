@@ -3,7 +3,7 @@ if (typeof window.ethereum === 'undefined') {
     alert("Please install MetaMask to use this dApp.");
 } else {
     const web3 = new Web3(window.ethereum);
-    const nftContractAddress = '0x798553cfd4bdfc1aac826353ee15a0f89f026390'; // Replace with your deployed MyNFT contract address
+    const nftContractAddress = '0x71205ac481f36b568e4f9b53e9152e075f658dfb'; // Replace with your deployed MyNFT contract address
     const erc20TokenAddress = '0xD71AC555645f647585D5EB44FeeD928C9D363226'; // Replace with your deployed ERC20 token address
 
     let nftABI = null;
