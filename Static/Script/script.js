@@ -3,21 +3,32 @@ if (typeof window.ethereum === 'undefined') {
     alert("Please install MetaMask to use this dApp.");
 } else {
     const web3 = new Web3(window.ethereum);
-    const nftContractAddress = '0x333DF3F12512650d850c46f44870955d5F5C3925';
+    const nftContractAddress = '0x798553cfd4bdfc1aac826353ee15a0f89f026390'; // Replace with your deployed MyNFT contract address
+    const erc20TokenAddress = '0xD71AC555645f647585D5EB44FeeD928C9D363226'; // Replace with your deployed ERC20 token address
 
     let nftABI = null;
+    let erc20ABI = null;
     let accounts = [];
 
     // Load ABIs dynamically
     async function loadABIs() {
-        nftABI = await fetch('./tokens/artifacts/contracts/MyNFT.sol/MyNFT.json')
-            .then(response => response.json())
-            .then(data => data.abi)
-            .catch(error => {
-                console.error("Failed to load ABI:", error);
-                document.getElementById('status').textContent = "Failed to load contract ABI.";
-                document.getElementById('status').classList.add("error");
-            });
+        try {
+            // Load MyNFT ABI
+            nftABI = await fetch('./tokens/artifacts/contracts/MyNFT.sol/MyNFT.json')
+                .then(response => response.json())
+                .then(data => data.abi);
+
+            // Load ERC20 ABI
+            erc20ABI = await fetch('./tokens/artifacts/contracts/MyERC20.sol/MyERC20.json')
+                .then(response => response.json())
+                .then(data => data.abi);
+
+            console.log("ABIs loaded successfully");
+        } catch (error) {
+            console.error("Failed to load ABIs:", error);
+            document.getElementById('status').textContent = "Failed to load contract ABIs.";
+            document.getElementById('status').classList.add("error");
+        }
     }
 
     // Request account access
@@ -33,6 +44,45 @@ if (typeof window.ethereum === 'undefined') {
         }
     }
 
+    // Approve ERC20 tokens for the NFT contract
+    async function approveERC20() {
+        if (!accounts || accounts.length === 0) {
+            alert("Please connect your MetaMask wallet.");
+            return;
+        }
+
+        if (!erc20ABI) {
+            alert("ERC20 ABI not loaded. Please try again.");
+            return;
+        }
+
+        const erc20Contract = new web3.eth.Contract(erc20ABI, erc20TokenAddress);
+        const mintPrice = await getMintPrice(); // Fetch the mint price from the NFT contract
+
+        try {
+            document.getElementById('status').textContent = "Approving ERC20 tokens...";
+            document.getElementById('status').classList.remove("success", "error");
+
+            const approveTx = await erc20Contract.methods
+                .approve(nftContractAddress, mintPrice)
+                .send({ from: accounts[0] });
+
+            document.getElementById('status').textContent = "ERC20 tokens approved!";
+            document.getElementById('status').classList.add("success");
+            console.log('Approval transaction:', approveTx);
+        } catch (error) {
+            document.getElementById('status').textContent = "ERC20 approval failed!";
+            document.getElementById('status').classList.add("error");
+            console.error("Approval error:", error);
+        }
+    }
+
+    // Fetch the mint price from the NFT contract
+    async function getMintPrice() {
+        const nftContract = new web3.eth.Contract(nftABI, nftContractAddress);
+        return await nftContract.methods.mintPrice().call();
+    }
+
     // Mint NFT function
     async function mintNFT() {
         if (!accounts || accounts.length === 0) {
@@ -41,16 +91,17 @@ if (typeof window.ethereum === 'undefined') {
         }
 
         if (!nftABI) {
-            alert("Contract ABI not loaded. Please try again.");
+            alert("NFT ABI not loaded. Please try again.");
             return;
         }
 
-        const contract = new web3.eth.Contract(nftABI, nftContractAddress);
+        const nftContract = new web3.eth.Contract(nftABI, nftContractAddress);
+
         try {
             document.getElementById('status').textContent = "Minting in progress...";
             document.getElementById('status').classList.remove("success", "error");
 
-            const mintTx = await contract.methods.mint(accounts[0]).send({ from: accounts[0] });
+            const mintTx = await nftContract.methods.mint().send({ from: accounts[0] });
 
             document.getElementById('status').textContent = "Minting successful!";
             document.getElementById('status').classList.add("success");
@@ -61,6 +112,13 @@ if (typeof window.ethereum === 'undefined') {
             console.error("Minting error:", error);
         }
     }
+
+    // Event listener for approve button
+    document.getElementById('approveBtn').addEventListener('click', async () => {
+        await loadWeb3();
+        await loadABIs();
+        await approveERC20();
+    });
 
     // Event listener for mint button
     document.getElementById('mintBtn').addEventListener('click', async () => {

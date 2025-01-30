@@ -1,13 +1,11 @@
 const { buildModule } = require("@nomicfoundation/hardhat-ignition/modules");
 
 module.exports = buildModule("MyNFT", (m) => {
-    const PAYMENT_TOKEN_ADDRESS = '0xD71AC555645f647585D5EB44FeeD928C9D363226'; // Use the previous address
-    const NAME = 'MyNFT'; // Use the previous name
-    const SYMBOL = 'MNFT'; // Use the previous symbol
-    const MINT_PRICE = 0; // Use the previous mint price
-    const MAX_SUPPLY = 1000; // Use the previous max supply
+    const PAYMENT_TOKEN_ADDRESS = '0xD71AC555645f647585D5EB44FeeD928C9D363226'; // Address of the ERC20 token
+    const MINT_PRICE = ethers.utils.parseUnits("100", 18); // Mint price in ERC20 tokens (e.g., 100 tokens with 18 decimals)
 
-    const nonFungible = m.contract('MyNFT', [NAME, SYMBOL, PAYMENT_TOKEN_ADDRESS, MINT_PRICE, MAX_SUPPLY]);
+    // Deploy the MyNFT contract with the required parameters
+    const nonFungible = m.contract("MyNFT", [PAYMENT_TOKEN_ADDRESS, MINT_PRICE]);
 
     return { nonFungible };
 });
