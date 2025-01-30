@@ -19,7 +19,7 @@ if (typeof window.ethereum === 'undefined') {
                 .then(data => data.abi);
 
             // Load ERC20 ABI
-            erc20ABI = await fetch('./tokens/artifacts/contracts/MyERC20.sol/MyERC20.json')
+            erc20ABI = await fetch('./tokens/artifacts/contracts/MyToken.sol/MyToken.json')
                 .then(response => response.json())
                 .then(data => data.abi);
 
